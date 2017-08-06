@@ -16,7 +16,7 @@ diff -rupN ori/servers/slapd/overlays/Makefile.in new/servers/slapd/overlays/Mak
 
  LIBRARY = ../liboverlays.a
 -PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la
-+PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la compare.c
++PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la compare.la
 
  XINCPATH = -I.. -I$(srcdir)/..
  XDEFS = $(MODULES_CPPFLAGS)

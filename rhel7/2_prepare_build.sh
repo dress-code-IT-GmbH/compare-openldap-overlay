@@ -14,7 +14,7 @@ if [ ! -f ~/.rpmmacros ] ; then
 fi
 
 
-BUILDDIR=`grep topdir ~/.rpmmacros | cut -f2 -d" "`
+BUILDDIR=`rpm --eval %_topdir`
 
 SOURCES=${BUILDDIR}/SOURCES
 
@@ -51,7 +51,7 @@ popd > /dev/null
 ## patching the specfile:
 
 if [ ! -f ${SPECS}/openldap.spec.backup ] ; then
-	cp ${SPECS}/openldap.spec ${SPECS}/openldap.spec.backup 
+	cp ${SPECS}/openldap.spec ${SPECS}/openldap.spec.backup
 fi
 
 patch ${SPECS}/openldap.spec < SPECS/openldap.spec.patch
