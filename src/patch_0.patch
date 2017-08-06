@@ -1,5 +1,6 @@
---- Makefile.in.2.4.40-13.el7	2017-08-06 14:45:17.369016662 +0200
-+++ Makefile.in	2017-08-06 14:43:33.085160275 +0200
+iff -rupN ori/servers/slapd/overlays/Makefile.in new/servers/slapd/overlays/Makefile.in
+--- ori/servers/slapd/overlays/Makefile.in	2017-08-06 15:24:08.252501215 +0200
++++ new/servers/slapd/overlays/Makefile.in	2017-08-06 15:29:22.971107332 +0200
 @@ -36,7 +36,8 @@ SRCS = overlays.c \
  	valsort.c \
  	smbk5pwd.c \
