@@ -1,30 +1,30 @@
-iff -rupN ori/servers/slapd/overlays/Makefile.in new/servers/slapd/overlays/Makefile.in
---- ori/servers/slapd/overlays/Makefile.in	2017-08-06 15:24:08.252501215 +0200
-+++ new/servers/slapd/overlays/Makefile.in	2017-08-06 15:29:22.971107332 +0200
+diff -rupN ori/servers/slapd/overlays/Makefile.in new/servers/slapd/overlays/Makefile.in
+--- ori/servers/slapd/overlays/Makefile.in	2017-08-06 16:49:10.886619537 +0200
++++ new/servers/slapd/overlays/Makefile.in	2017-08-06 17:15:31.066223125 +0200
 @@ -36,7 +36,8 @@ SRCS = overlays.c \
  	valsort.c \
  	smbk5pwd.c \
  	allop.c \
 -	sha2.c slapd-sha2.c
 +	sha2.c slapd-sha2.c \
-+	ov_compare.c \
++	ov_compare.c
  OBJS = statover.o \
  	@SLAPD_STATIC_OVERLAYS@ \
  	overlays.o
 @@ -56,7 +57,7 @@ NT_LINK_LIBS = -L.. -lslapd $(@BUILD_LIB
  UNIX_LINK_LIBS = $(@BUILD_LIBS_DYNAMIC@_LDAP_LIBS)
-
+ 
  LIBRARY = ../liboverlays.a
 -PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la
-+PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la ov_compare.la
-
++PROGRAMS = @SLAPD_DYNAMIC_OVERLAYS@ smbk5pwd.la allop.la pw-sha2.la ov_compare.c
+ 
  XINCPATH = -I.. -I$(srcdir)/..
  XDEFS = $(MODULES_CPPFLAGS)
 @@ -149,6 +150,9 @@ slapd-sha2.lo : slapd-sha2.c
  pw-sha2.la : sha2.lo slapd-sha2.lo
  	$(LTLINK_MOD) -module -o $@ $? version.lo $(LINK_LIBS)
-
-+ov_compare.la: ov_compare.c
+ 
++ov_compare.la : ov_compare.lo
 +	$(LTLINK_MOD) -module -o $@ ov_compare.lo version.lo $(LINK_LIBS)
 +
  install-local:	$(PROGRAMS)
