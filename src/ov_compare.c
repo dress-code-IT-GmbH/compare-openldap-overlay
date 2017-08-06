@@ -40,7 +40,7 @@
 #include "slap.h"
 #include "config.h"
 
-#include "twcompare.h"
+#include "ov_compare.h"
 
 char *bval2str(struct berval bv)
 {
@@ -63,7 +63,7 @@ int same_equality_and_ordering(AttributeDescription * ad_a,
 	char *at_ordering_oid_b = sat_atype_b.at_ordering_oid;
 
 	Log4(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-	     "twcompare: comparing: %s-%s vs %s-%s\n", at_equality_oid_a,
+	     "ov_compare: comparing: %s-%s vs %s-%s\n", at_equality_oid_a,
 	     at_ordering_oid_a, at_equality_oid_b, at_ordering_oid_b);
 
 	if (strcasecmp(at_equality_oid_a, at_equality_oid_b)) {
@@ -75,13 +75,13 @@ int same_equality_and_ordering(AttributeDescription * ad_a,
 	return OV_COMPARE_SUCCESS;
 }
 
-twcompare_function_result_t attr_add(twcompare_attributes_t * attributes,
+ov_compare_function_result_t attr_add(ov_compare_attributes_t * attributes,
 				     AttributeDescription * ad)
 {
-	twcompare_attrs_t *attr;
+	ov_compare_attrs_t *attr;
 	int i;
 	int rc;
-	attr = ch_calloc(1, sizeof(twcompare_attrs_t));
+	attr = ch_calloc(1, sizeof(ov_compare_attrs_t));
 	attr->attr = ad;
 
 	for (i = 0; i < 2; i++) {
@@ -102,17 +102,17 @@ twcompare_function_result_t attr_add(twcompare_attributes_t * attributes,
 	return OV_COMPARE_MORE_THAN_TWO_ARGUMENTS_ERROR;
 }
 
-void attr_del(twcompare_attributes_t * attributes, int attnum)
+void attr_del(ov_compare_attributes_t * attributes, int attnum)
 {
 	ch_free(attributes->attribs[attnum]);
 	attributes->attribs[attnum] = (void *)0;
 }
 
-void attr_log(twcompare_attributes_t * attributes)
+void attr_log(ov_compare_attributes_t * attributes)
 {
 	int i;
 	char *s[2];
-	static const char fmt[] = "twcompare: attribute 0:=%s, 1:=%s\n";
+	static const char fmt[] = "ov_compare: attribute 0:=%s, 1:=%s\n";
 
 	for (i = 0; i < 2; i++) {
 		if (attributes->attribs[i]) {
@@ -124,7 +124,7 @@ void attr_log(twcompare_attributes_t * attributes)
 	Log2(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, fmt, s[0], s[1]);
 }
 
-void twcompare_emsg(int retcode, char **emsg)
+void ov_compare_emsg(int retcode, char **emsg)
 {
 	switch (retcode) {
 	case OV_COMPARE_MORE_THAN_TWO_ARGUMENTS_ERROR:
@@ -140,26 +140,26 @@ void twcompare_emsg(int retcode, char **emsg)
 	}
 }
 
-twcompare_attributes_t *create_private()
+ov_compare_attributes_t *create_private()
 {
-	twcompare_attributes_t *new_priv;
+	ov_compare_attributes_t *new_priv;
 
-	new_priv = ch_calloc(1, sizeof(twcompare_attributes_t));
+	new_priv = ch_calloc(1, sizeof(ov_compare_attributes_t));
 	return new_priv;
 }
 
-static int twcompare_cf_gen(ConfigArgs * c)
+static int ov_compare_cf_gen(ConfigArgs * c)
 {
 	slap_overinst *on = (slap_overinst *) c->bi;
-	twcompare_attributes_t *attributes =
-	    (twcompare_attributes_t *) on->on_bi.bi_private;
+	ov_compare_attributes_t *attributes =
+	    (ov_compare_attributes_t *) on->on_bi.bi_private;
 	AttributeDescription *ad;
 	char *param = NULL;
 	char *emsg;
 	int rc = 0;
 
 	Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-	     "twcompare: entered twcompare config handler with opcode %d\n",
+	     "ov_compare: entered ov_compare config handler with opcode %d\n",
 	     c->op);
 	switch (c->op) {
 	case SLAP_CONFIG_EMIT:
@@ -169,7 +169,7 @@ static int twcompare_cf_gen(ConfigArgs * c)
 		 */
 		Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_ERR,
 		     "SLAP_CONFIG_EMIT called\n");
-		twcompare_emsg(OV_COMPARE_SLAP_CONFIG_EMIT_CALLED_ERROR, &emsg);
+		ov_compare_emsg(OV_COMPARE_SLAP_CONFIG_EMIT_CALLED_ERROR, &emsg);
 		snprintf(c->cr_msg, sizeof(c->cr_msg), "ERROR: %s: %s", param,
 			 emsg);
 		rc = ARG_BAD_CONF;
@@ -177,16 +177,16 @@ static int twcompare_cf_gen(ConfigArgs * c)
 	case LDAP_MOD_ADD:
 		param = c->argv[1];
 		Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-		     "twcompare: LDAP_MOD_ADD: %s\n", param);
+		     "ov_compare: LDAP_MOD_ADD: %s\n", param);
 	case SLAP_CONFIG_ADD:
 		if (!param) {
 			param = c->argv[1];
 			Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-			     "twcompare: SLAP_CONFIG_ADD: %s\n", param);
+			     "ov_compare: SLAP_CONFIG_ADD: %s\n", param);
 		}
 		ad = NULL;
 		const char *text;
-		static const char fmt[] = "(twcompare) attribute: %s: %s";
+		static const char fmt[] = "(ov_compare) attribute: %s: %s";
 		if (slap_str2ad(param, &ad, &text) != LDAP_SUCCESS) {
 			snprintf(c->cr_msg, sizeof(c->cr_msg), fmt, param,
 				 text);
@@ -195,7 +195,7 @@ static int twcompare_cf_gen(ConfigArgs * c)
 		}
 		rc = attr_add(attributes, ad);
 		if (rc != LDAP_SUCCESS) {
-			twcompare_emsg(rc, &emsg);
+			ov_compare_emsg(rc, &emsg);
 			snprintf(c->cr_msg, sizeof(c->cr_msg), fmt, param,
 				 emsg);
 			rc = ARG_BAD_CONF;
@@ -205,12 +205,12 @@ static int twcompare_cf_gen(ConfigArgs * c)
 	case LDAP_MOD_DELETE:
 		if (c->valx < 0) {
 			Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-			     "twcompare: LDAP_MOD_DELETE: all\n");
+			     "ov_compare: LDAP_MOD_DELETE: all\n");
 			attr_del(attributes, 0);
 			attr_del(attributes, 1);
 		} else {
 			Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-			     "twcompare: LDAP_MOD_DELETE: %d\n", c->valx);
+			     "ov_compare: LDAP_MOD_DELETE: %d\n", c->valx);
 			attr_del(attributes, c->valx);
 		}
 		return rc;
@@ -253,10 +253,10 @@ int attr_is_not_single(Attribute * a)
 	return 0;
 }
 
-static int twcompare_add(Operation * op, SlapReply * rs)
+static int ov_compare_add(Operation * op, SlapReply * rs)
 {
 	slap_overinst *on = (slap_overinst *) op->o_bd->bd_info;
-	twcompare_attributes_t *cfg;
+	ov_compare_attributes_t *cfg;
 	Attribute *entry_attribs, *attr_a, *attr_b;
 	AttributeDescription *ad_a, *ad_b;
 	MatchingRule *mr;
@@ -276,7 +276,7 @@ static int twcompare_add(Operation * op, SlapReply * rs)
 	/* TODO: Should we check something here? on? */
 
 	cfg = on->on_bi.bi_private;
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: twcompare_add\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: ov_compare_add\n");
 	attr_log(cfg);
 
 	ad_a = cfg->attribs[0]->attr;
@@ -323,7 +323,7 @@ static int twcompare_add(Operation * op, SlapReply * rs)
 		match_fun = mr->smr_match;
 
 		Log2(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-		     "twcompare: comparing %s:%s\n", val_a.bv_val,
+		     "ov_compare: comparing %s:%s\n", val_a.bv_val,
 		     val_b.bv_val);
 
 		match_fun(&match, 0, ad_a->ad_type->sat_syntax, mr, &val_a,
@@ -334,7 +334,7 @@ static int twcompare_add(Operation * op, SlapReply * rs)
 
 	cmp = reduce_result(cmp);
 
-	Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: result: %d\n", cmp);
+	Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: result: %d\n", cmp);
 
 	char *cbuf = ch_calloc(sizeof(char), 23);
 	bv_result.bv_val = cbuf;
@@ -343,10 +343,10 @@ static int twcompare_add(Operation * op, SlapReply * rs)
 	return SLAP_CB_CONTINUE;
 }
 
-static int twcompare_update(Operation * op, SlapReply * rs)
+static int ov_compare_update(Operation * op, SlapReply * rs)
 {
 	slap_overinst *on = (slap_overinst *) op->o_bd->bd_info;
-	twcompare_attributes_t *cfg;
+	ov_compare_attributes_t *cfg;
 	Modifications *modlist, *m;
 	MatchingRule *mr;
 	Attribute *entry_attribs, *attr_a, *attr_b;
@@ -372,7 +372,7 @@ static int twcompare_update(Operation * op, SlapReply * rs)
 	}
 
 	cfg = on->on_bi.bi_private;
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: twcompare_update\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: ov_compare_update\n");
 	attr_log(cfg);
 
 	modlist = op->orm_modlist;
@@ -394,7 +394,7 @@ static int twcompare_update(Operation * op, SlapReply * rs)
 
 	if (!(val_a || val_b)) {
 		Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-		     "twcompare: no comparable attributes recognized: continuing\n");
+		     "ov_compare: no comparable attributes recognized: continuing\n");
 		return SLAP_CB_CONTINUE;
 	}
 
@@ -445,7 +445,7 @@ static int twcompare_update(Operation * op, SlapReply * rs)
 		match_fun = mr->smr_match;
 
 		Log2(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-		     "twcompare: comparing %s:%s\n", val_a->bv_val,
+		     "ov_compare: comparing %s:%s\n", val_a->bv_val,
 		     val_b->bv_val);
 
 		match_fun(&match, 0, ad_a->ad_type->sat_syntax, mr, val_a,
@@ -456,7 +456,7 @@ static int twcompare_update(Operation * op, SlapReply * rs)
 	}
 	cmp = reduce_result(cmp);
 
-	Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: result: %d\n", cmp);
+	Log1(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: result: %d\n", cmp);
 
 	//asm("int $3");
 	char *cbuf = ch_calloc(sizeof(char), 23);
@@ -481,99 +481,99 @@ static int twcompare_update(Operation * op, SlapReply * rs)
 	return SLAP_CB_CONTINUE;
 }
 
-static int twcompare_db_init(BackendDB * be)
+static int ov_compare_db_init(BackendDB * be)
 {
 
 	slap_overinst *oi = (slap_overinst *) be->bd_info;
 	oi->on_bi.bi_private = (void *)create_private();
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: DB_INIT:\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: DB_INIT:\n");
 	attr_log(oi->on_bi.bi_private);
 	return 0;
 }
 
-static int twcompare_db_config(BackendDB * be, const char *fname, int lineno,
+static int ov_compare_db_config(BackendDB * be, const char *fname, int lineno,
 			       int argc, char **argv)
 {
 	Log2(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-	     "twcompare:  DB_CONFIG argc=%d argv[0]=\"%s\"\n", argc, argv[0]);
+	     "ov_compare:  DB_CONFIG argc=%d argv[0]=\"%s\"\n", argc, argv[0]);
 	return 0;
 }
 
-static int twcompare_db_open(BackendDB * be, ConfigReply * cr)
+static int ov_compare_db_open(BackendDB * be, ConfigReply * cr)
 {
 	slap_overinst *on;
-	twcompare_attributes_t *cfg;
+	ov_compare_attributes_t *cfg;
 	on = (slap_overinst *) be->bd_info;
 	cfg = on->on_bi.bi_private;
 	if (!cfg) {
 		Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-		     "twcompare: DB_OPEN no config (now)\n");
+		     "ov_compare: DB_OPEN no config (now)\n");
 		return 0;
 	}
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: DB_OPEN\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: DB_OPEN\n");
 	attr_log(cfg);
 	return 0;
 }
 
-static int twcompare_db_close(BackendDB * be)
+static int ov_compare_db_close(BackendDB * be)
 {
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare DB_CLOSE\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare DB_CLOSE\n");
 	return 0;
 }
 
-static int twcompare_db_destroy(BackendDB * be)
+static int ov_compare_db_destroy(BackendDB * be)
 {
-	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "twcompare: DB_DESTROY\n");
+	Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO, "ov_compare: DB_DESTROY\n");
 	return 0;
 }
 
-static slap_overinst twcompare;
+static slap_overinst ov_compare;
 #if SLAPD_OVER_TWCOMPARE == SLAPD_MOD_DYNAMIC
 static
 #endif
-int twcompare_initialize()
+int ov_compare_initialize()
 {
 	int rc;
 	int i, code;
-	for (i = 0; twcompare_OpSchema[i].def; i++) {
+	for (i = 0; ov_compare_OpSchema[i].def; i++) {
 		code =
-		    register_at(twcompare_OpSchema[i].def,
-				twcompare_OpSchema[i].ad, 0);
+		    register_at(ov_compare_OpSchema[i].def,
+				ov_compare_OpSchema[i].ad, 0);
 		if (code) {
 			Log0(LDAP_DEBUG_ANY, LDAP_LEVEL_INFO,
-			     "twcompare: initialize: register_at failed\n");
+			     "ov_compare: initialize: register_at failed\n");
 			return code;
 		}
 	}
 
-	twcompare.on_bi.bi_type = "twcompare";
-	twcompare.on_bi.bi_db_init = (void *)twcompare_db_init;
-	twcompare.on_bi.bi_db_open = (void *)twcompare_db_open;
-	twcompare.on_bi.bi_db_config = (void *)twcompare_db_config;
-	twcompare.on_bi.bi_db_close = (void *)twcompare_db_close;
-	twcompare.on_bi.bi_db_destroy = (void *)twcompare_db_destroy;
-	twcompare.on_bi.bi_op_add = (void *)twcompare_add;
-	// twcompare.on_bi.bi_op_bind = twcompare_op_func;
-	// twcompare.on_bi.bi_op_unbind = twcompare_op_func;
-	// twcompare.on_bi.bi_op_compare = twcompare_op_func;
-	// twcompare.on_bi.bi_op_delete = twcompare_op_func;
-	twcompare.on_bi.bi_op_modify = (void *)twcompare_update;
-	// twcompare.on_bi.bi_op_modrdn = twcompare_op_func;
-	// twcompare.on_bi.bi_op_search = twcompare_op_func;
-	// twcompare.on_bi.bi_op_abandon = twcompare_op_func;
-	// twcompare.on_bi.bi_extended = twcompare_op_func;
-	// twcompare.on_response = twcompare_response;
-	twcompare.on_bi.bi_cf_ocs = twcompareocs;
-	rc = config_register_schema(twcomparecfg, twcompareocs);
+	ov_compare.on_bi.bi_type = "ov_compare";
+	ov_compare.on_bi.bi_db_init = (void *)ov_compare_db_init;
+	ov_compare.on_bi.bi_db_open = (void *)ov_compare_db_open;
+	ov_compare.on_bi.bi_db_config = (void *)ov_compare_db_config;
+	ov_compare.on_bi.bi_db_close = (void *)ov_compare_db_close;
+	ov_compare.on_bi.bi_db_destroy = (void *)ov_compare_db_destroy;
+	ov_compare.on_bi.bi_op_add = (void *)ov_compare_add;
+	// ov_compare.on_bi.bi_op_bind = ov_compare_op_func;
+	// ov_compare.on_bi.bi_op_unbind = ov_compare_op_func;
+	// ov_compare.on_bi.bi_op_compare = ov_compare_op_func;
+	// ov_compare.on_bi.bi_op_delete = ov_compare_op_func;
+	ov_compare.on_bi.bi_op_modify = (void *)ov_compare_update;
+	// ov_compare.on_bi.bi_op_modrdn = ov_compare_op_func;
+	// ov_compare.on_bi.bi_op_search = ov_compare_op_func;
+	// ov_compare.on_bi.bi_op_abandon = ov_compare_op_func;
+	// ov_compare.on_bi.bi_extended = ov_compare_op_func;
+	// ov_compare.on_response = ov_compare_response;
+	ov_compare.on_bi.bi_cf_ocs = ov_compareocs;
+	rc = config_register_schema(ov_comparecfg, ov_compareocs);
 	if (rc)
 		return rc;
-	return overlay_register(&twcompare);
+	return overlay_register(&ov_compare);
 }
 
 #if SLAPD_OVER_TWCOMPARE == SLAPD_MOD_DYNAMIC
 int init_module(int argc, char *argv[])
 {
-	return twcompare_initialize();
+	return ov_compare_initialize();
 }
 #endif				/* SLAPD_OVER_TWCOMPARE ==
 				 * SLAPD_MOD_DYNAMIC */
