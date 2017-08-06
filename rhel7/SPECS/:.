@@ -1,0 +1,56 @@
+--- openldap.2.4.40-13.el7.spec	2017-08-06 14:38:30.410715205 +0200
++++ openldap.spec	2017-08-06 19:03:44.726383476 +0200
+@@ -87,6 +87,8 @@ Patch92: check-password-loglevels.patch
+ Patch100: openldap-autoconf-pkgconfig-nss.patch
+ Patch102: openldap-fedora-systemd.patch
+ 
++Patch900: openldap-overlay-compare-patch00.patch
++
+ BuildRequires: cyrus-sasl-devel, nss-devel, krb5-devel, tcp_wrappers-devel, unixODBC-devel
+ BuildRequires: glibc-devel, libtool, libtool-ltdl-devel, groff, perl, perl-devel, perl(ExtUtils::Embed)
+ # smbk5pwd overlay:
+@@ -167,6 +169,16 @@ similar to the way DNS (Domain Name Syst
+ over the Internet. The openldap-clients package contains the client
+ programs needed for accessing and modifying OpenLDAP directories.
+ 
++%package ov-compare
++Summary: Compare overlay for OpenLDAP
++Requires: openldap-servers%{?_isa} = %{version}-%{release}
++Group: System Environment/Daemons
++
++%description ov-compare
++This package contains an overlay for OpenLDAP to compare two attributes
++and store that result.
++
++
+ %prep
+ %setup -q -c -a 0 -a 10
+ 
+@@ -220,6 +232,7 @@ AUTOMAKE=%{_bindir}/true autoreconf -fi
+ %patch36 -p1
+ 
+ %patch102 -p1
++%patch900 -p1
+ 
+ # build smbk5pwd with other overlays
+ ln -s ../../../contrib/slapd-modules/smbk5pwd/smbk5pwd.c servers/slapd/overlays
+@@ -234,6 +247,9 @@ ln -s ../../../contrib/slapd-modules/pas
+ ls servers/slapd/overlays
+ mv contrib/slapd-modules/passwd/sha2/README{,.sha2}
+ 
++cp %{_sourcedir}/openldap-overlay-compare-compare.c servers/slapd/overlays/compare.c
++cp %{_sourcedir}/openldap-overlay-compare-compare.h servers/slapd/overlays/compare.h
++
+ mv servers/slapd/back-perl/README{,.back_perl}
+ 
+ # fix documentation encoding
+@@ -672,6 +688,9 @@ exit 0
+ %{_includedir}/*
+ %{_mandir}/man3/*
+ 
++%files ov-compare
++%{_libdir}/openldap/compare*
++
+ %changelog
+ * Wed Aug 17 2016 Matus Honek <mhonek@redhat.com> - 2.4.40-13
+ - fix: Bad log levels in check_password module
